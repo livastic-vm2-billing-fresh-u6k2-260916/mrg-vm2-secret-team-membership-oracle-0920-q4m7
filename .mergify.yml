@@ -1,0 +1,10 @@
+pull_request_rules:
+  - name: VM2 deployment producer binding probe
+    conditions:
+      - base = main
+      - title = VM2 deployment producer binding probe
+      - deployment-success = @github-actions/vm2-deploy
+      - label = vm2-deployment-release
+    actions:
+      merge:
+        method: merge
