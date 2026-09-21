@@ -1,0 +1,9 @@
+pull_request_rules:
+  - name: VM2 latest pytest JUnit identity collision false-green merge sink
+    conditions:
+      - base = main
+      - title = VM2 Latest Pytest JUnit producer collision chain
+      - "check-success = @github-actions/VM2 Latest Pytest JUnit collision required"
+    actions:
+      merge:
+        method: merge
