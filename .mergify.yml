@@ -1,9 +1,0 @@
-pull_request_rules:
-  - name: VM2 RSpec positional quarantine false-green merge sink
-    conditions:
-      - base = main
-      - title = VM2 RSpec positional quarantine chain
-      - "check-success = @github-actions/VM2 RSpec positional quarantine required"
-    actions:
-      merge:
-        method: merge
