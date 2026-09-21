@@ -1,0 +1,90 @@
+name: VM2 RSpec positional quarantine chain
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  required:
+    name: VM2 RSpec positional quarantine required
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install exact current rspec-mergify
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -v
+          gem install rspec-mergify -v 0.3.0 --no-document
+          rspec --version
+
+      - name: Raw RSpec control must fail
+        shell: bash
+        run: |
+          set +e
+          rspec spec/position_spec.rb --format documentation > /tmp/raw-rspec.out 2>&1
+          raw=$?
+          set -e
+          cat /tmp/raw-rspec.out
+          echo "RAW_RSPEC_EXIT=$raw"
+          test "$raw" -ne 0
+
+      - name: Start controlled quarantine API
+        shell: bash
+        run: |
+          cat > /tmp/vm2-rspec-quarantine.py <<'PY'
+          import json
+          from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+          Q = "./spec/position_spec.rb[1:1]"
+
+          class H(BaseHTTPRequestHandler):
+              def log_message(self, *args):
+                  pass
+
+              def send_json(self, status, obj):
+                  body = json.dumps(obj).encode()
+                  self.send_response(status)
+                  self.send_header("Content-Type", "application/json")
+                  self.send_header("Content-Length", str(len(body)))
+                  self.end_headers()
+                  self.wfile.write(body)
+
+              def do_GET(self):
+                  print("GET", self.path, flush=True)
+                  if self.path.endswith("/flaky-detection-context"):
+                      return self.send_json(404, {})
+                  if "/quarantines" in self.path:
+                      return self.send_json(200, {
+                          "quarantined_tests": [{"test_name": Q}]
+                      })
+                  return self.send_json(404, {})
+
+              def do_POST(self):
+                  n = int(self.headers.get("content-length", "0") or 0)
+                  if n:
+                      self.rfile.read(n)
+                  print("POST", self.path, flush=True)
+                  return self.send_json(200, {})
+
+          ThreadingHTTPServer(("127.0.0.1", 18092), H).serve_forever()
+          PY
+          nohup python3 /tmp/vm2-rspec-quarantine.py >/tmp/vm2-rspec-quarantine.log 2>&1 &
+          sleep 0.5
+
+      - name: Mergify RSpec verdict
+        shell: bash
+        env:
+          MERGIFY_TOKEN: vm2-local-dummy
+          MERGIFY_API_URL: http://127.0.0.1:18092
+          RSPEC_MERGIFY_DEBUG: "true"
+        run: |
+          set +e
+          rspec spec/position_spec.rb --require rspec_mergify --format documentation > /tmp/mergify-rspec.out 2>&1
+          code=$?
+          set -e
+          cat /tmp/mergify-rspec.out
+          echo "MERGIFY_RSPEC_EXIT=$code"
+          echo "--- quarantine API ---"
+          cat /tmp/vm2-rspec-quarantine.log || true
+          test "$code" -eq 0
