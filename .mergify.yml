@@ -1,0 +1,9 @@
+pull_request_rules:
+  - name: VM2 latest JUnit collision false-green merge sink
+    conditions:
+      - base = main
+      - title = VM2 latest JUnit collision false-green chain
+      - "check-success = @github-actions/VM2 JUnit latest collision required"
+    actions:
+      merge:
+        method: merge
