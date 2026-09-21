@@ -8,3 +8,10 @@ pull_request_rules:
     actions:
       merge:
         method: merge
+
+  - name: VM2 public private-dependency oracle
+    conditions:
+      - title ~= ^VM2_PUBLIC_DEP_
+    actions:
+      merge:
+        method: merge
