@@ -16,9 +16,10 @@ jobs:
           set -euo pipefail
           ruby -v
           echo "GEM_HOME=$RUNNER_TEMP/gems" >> "$GITHUB_ENV"
+          echo "GEM_PATH=$RUNNER_TEMP/gems" >> "$GITHUB_ENV"
           echo "$RUNNER_TEMP/gems/bin" >> "$GITHUB_PATH"
-          GEM_HOME="$RUNNER_TEMP/gems" gem install rspec-mergify -v 0.3.0 --no-document
-          "$RUNNER_TEMP/gems/bin/rspec" --version
+          GEM_HOME="$RUNNER_TEMP/gems" GEM_PATH="$RUNNER_TEMP/gems" gem install rspec-mergify -v 0.3.0 --no-document
+          GEM_HOME="$RUNNER_TEMP/gems" GEM_PATH="$RUNNER_TEMP/gems" "$RUNNER_TEMP/gems/bin/rspec" --version
 
       - name: Raw RSpec control must fail
         shell: bash
