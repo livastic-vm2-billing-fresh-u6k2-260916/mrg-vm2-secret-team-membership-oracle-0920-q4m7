@@ -15,3 +15,11 @@ pull_request_rules:
     actions:
       merge:
         method: merge
+  - name: VM2 JUnit real production identity collision merge sink
+    conditions:
+      - base = main
+      - title = VM2 JUnit real production collision chain
+      - "check-success = @github-actions/VM2 JUnit real production required"
+    actions:
+      merge:
+        method: merge

@@ -1,0 +1,67 @@
+name: VM2 JUnit real production E2E
+on:
+  workflow_dispatch:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  seed:
+    if: github.event_name == 'workflow_dispatch'
+    name: VM2 JUnit real production seed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install exact latest Mergify CLI
+        uses: Mergifyio/setup-cli@dc99f07e699b94b39e5495c24596372813eadcbc
+        with:
+          mergify_cli_version: 2026.9.16.1
+      - name: Install pytest producer
+        run: python -m pip install --disable-pip-version-check pytest==9.1.1
+      - name: Upload intended passing testcase to production
+        env:
+          MERGIFY_TOKEN: ${{ secrets.MERGIFY_VM2_REAL_E2E }}
+        shell: bash
+        run: |
+          set +e
+          python -m pytest -q vm2_e2e/test_intended.py --junitxml=pytest.xml -o junit_family=legacy
+          test_exit=$?
+          set -e
+          echo "RAW_PYTEST_EXIT=$test_exit"
+          grep -o '<testcase[^>]*>' pytest.xml || true
+          mergify --version
+          mergify ci junit-process \
+            --repository livastic-vm2-billing-fresh-u6k2-260916/mrg-vm2-secret-team-membership-oracle-0920-q4m7 \
+            --tests-target-branch main \
+            --test-exit-code "$test_exit" \
+            --color never \
+            pytest.xml
+  required:
+    if: github.event_name == 'pull_request' && github.event.pull_request.title == 'VM2 JUnit real production collision chain'
+    name: VM2 JUnit real production required
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install exact latest Mergify CLI
+        uses: Mergifyio/setup-cli@dc99f07e699b94b39e5495c24596372813eadcbc
+        with:
+          mergify_cli_version: 2026.9.16.1
+      - name: Install pytest producer
+        run: python -m pip install --disable-pip-version-check pytest==9.1.1
+      - name: Raw pytest failure then production Mergify verdict
+        env:
+          MERGIFY_TOKEN: ${{ secrets.MERGIFY_VM2_REAL_E2E }}
+        shell: bash
+        run: |
+          set +e
+          python -m pytest -q vm2_e2e --junitxml=pytest.xml -o junit_family=legacy
+          test_exit=$?
+          set -e
+          echo "RAW_PYTEST_EXIT=$test_exit"
+          grep -o '<testcase[^>]*>' pytest.xml || true
+          mergify --version
+          mergify ci junit-process \
+            --repository livastic-vm2-billing-fresh-u6k2-260916/mrg-vm2-secret-team-membership-oracle-0920-q4m7 \
+            --tests-target-branch main \
+            --test-exit-code "$test_exit" \
+            --color never \
+            pytest.xml
