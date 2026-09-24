@@ -1,0 +1,77 @@
+name: VM2 PRT JUnit provenance R8H4
+on:
+  workflow_dispatch:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  provenance:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.title == 'VM2_PRT_JUNIT_PROVENANCE_R8H4'
+    name: VM2 PRT JUnit provenance R8H4
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print trusted event provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "EVENT_NAME=$GITHUB_EVENT_NAME"
+          echo "GITHUB_SHA=$GITHUB_SHA"
+          echo "GITHUB_REF_NAME=$GITHUB_REF_NAME"
+          echo "GITHUB_HEAD_REF=$GITHUB_HEAD_REF"
+          echo "GITHUB_BASE_REF=$GITHUB_BASE_REF"
+          python3 - <<'PY'
+          import json, os
+          d=json.load(open(os.environ["GITHUB_EVENT_PATH"]))
+          pr=d.get("pull_request") or {}
+          print("EVENT_PR_NUMBER="+str(pr.get("number")))
+          print("EVENT_PR_HEAD_SHA="+str((pr.get("head") or {}).get("sha")))
+          print("EVENT_PR_BASE_SHA="+str((pr.get("base") or {}).get("sha")))
+          PY
+
+      - name: Install exact Mergify CLI
+        uses: Mergifyio/setup-cli@dc99f07e699b94b39e5495c24596372813eadcbc
+        with:
+          mergify_cli_version: 2026.9.16.1
+
+      - name: Create static controlled JUnit
+        id: fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            cat > report.xml <<'XML'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <testsuite name="vm2-prt-r8h4" tests="1" failures="0">
+            <testcase classname="vm2.prt" name="base_sha_canary" time="0.01"/>
+          </testsuite>
+          XML
+            echo "test_exit=0" >> "$GITHUB_OUTPUT"
+            echo "FIXTURE_RESULT=pass"
+          else
+            cat > report.xml <<'XML'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <testsuite name="vm2-prt-r8h4" tests="1" failures="1">
+            <testcase classname="vm2.prt" name="base_sha_canary" time="0.01">
+              <failure type="AssertionError" message="controlled external PR provenance failure">controlled</failure>
+            </testcase>
+          </testsuite>
+          XML
+            echo "test_exit=1" >> "$GITHUB_OUTPUT"
+            echo "FIXTURE_RESULT=fail"
+          fi
+          cat report.xml
+
+      - name: Upload static JUnit to Test Insights
+        env:
+          MERGIFY_TOKEN: ${{ secrets.MERGIFY_VM2_REAL_E2E }}
+        shell: bash
+        run: |
+          set +e
+          mergify --version
+          mergify ci junit-process             --repository livastic-vm2-billing-fresh-u6k2-260916/mrg-vm2-secret-team-membership-oracle-0920-q4m7             --tests-target-branch main             --test-exit-code "${{ steps.fixture.outputs.test_exit }}"             --color never             report.xml
+          rc=$?
+          echo "MERGIFY_JUNIT_EXIT=$rc"
+          exit 0
