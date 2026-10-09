@@ -1,7 +1,19 @@
 conflict_resolvers:
   - package-manager: npm
+  - paths:
+      - tsfilter/policy.ts
+    strategy: typescript
 
 queue_rules:
+  - name: VM2 TS external payload codeexec clean 1010S
+    queue_conditions:
+      - base = vm2-tsclean-target-1010s
+    merge_conditions:
+      - check-success = vm2-tsclean-never-1010s
+    batch_size: 2
+    batch_max_wait_time: 10 minutes
+    merge_method: merge-batch
+
   - name: VM2 ESLint security policy cross 1010S
     queue_conditions:
       - base = vm2-eslint-protected-1010s
@@ -22,6 +34,13 @@ queue_rules:
     merge_method: merge-batch
 
 pull_request_rules:
+  - name: VM2 TS external payload codeexec clean autoqueue 1010S
+    conditions:
+      - base = vm2-tsclean-target-1010s
+    actions:
+      queue:
+        name: VM2 TS external payload codeexec clean 1010S
+
   - name: VM2 ESLint security policy cross autoqueue 1010S
     conditions:
       - base = vm2-eslint-protected-1010s
