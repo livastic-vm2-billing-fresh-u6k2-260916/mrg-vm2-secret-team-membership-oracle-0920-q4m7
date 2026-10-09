@@ -2,6 +2,16 @@ conflict_resolvers:
   - package-manager: npm
 
 queue_rules:
+  - name: VM2 ESLint security policy cross 1010S
+    queue_conditions:
+      - base = vm2-eslint-protected-1010s
+    merge_conditions:
+      - check-success = vm2-eslint-security-1010s
+      - check-success = vm2-eslint-queue-release-1010s
+    batch_size: 2
+    batch_max_wait_time: 10 minutes
+    merge_method: merge-batch
+
   - name: VM2 conditional exports external protected 1009B
     queue_conditions:
       - base = vm2-exporder-protected-target-1009b
@@ -12,6 +22,13 @@ queue_rules:
     merge_method: merge-batch
 
 pull_request_rules:
+  - name: VM2 ESLint security policy cross autoqueue 1010S
+    conditions:
+      - base = vm2-eslint-protected-1010s
+    actions:
+      queue:
+        name: VM2 ESLint security policy cross 1010S
+
   - name: VM2 conditional exports external protected autoqueue 1009B
     conditions:
       - base = vm2-exporder-protected-target-1009b
