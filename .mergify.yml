@@ -8,7 +8,7 @@ queue_rules:
     queue_conditions:
       - base = vm2-exporder-protected-target-1009c
     merge_conditions:
-      - check-success = vm2-branchprov-bf-side-effect
+      - check-success = vm2-branchprov-bf-trigger
     batch_size: 2
     batch_max_wait_time: 10 minutes
     merge_method: merge-batch
