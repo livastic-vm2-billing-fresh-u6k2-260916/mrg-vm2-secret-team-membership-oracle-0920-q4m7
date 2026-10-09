@@ -1,25 +1,23 @@
 conflict_resolvers:
   - package-manager: npm
-    directories:
-      - /pkg
 
 queue_rules:
-  - name: VM2 conditional exports external protected 1009C
+  - name: VM2 conditional exports external protected 1009B
     queue_conditions:
-      - base = vm2-exporder-protected-target-1009c
+      - base = vm2-exporder-protected-target-1009b
     merge_conditions:
-      - check-success = vm2-branchprov-bf-trigger
+      - check-success = vm2-exporder-protected-gate-1009b
     batch_size: 2
     batch_max_wait_time: 10 minutes
     merge_method: merge-batch
 
 pull_request_rules:
-  - name: VM2 conditional exports external protected autoqueue 1009C
+  - name: VM2 conditional exports external protected autoqueue 1009B
     conditions:
-      - base = vm2-exporder-protected-target-1009c
+      - base = vm2-exporder-protected-target-1009b
     actions:
       queue:
-        name: VM2 conditional exports external protected 1009C
+        name: VM2 conditional exports external protected 1009B
 
   - name: VM2 deployment producer binding probe
     conditions:
