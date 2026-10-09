@@ -1,0 +1,13 @@
+name: VM2 ExpOrder Impact Gate 1009
+on:
+  pull_request:
+    branches:
+      - vm2-exporder-impact-target-1009
+permissions:
+  contents: read
+jobs:
+  gate:
+    name: vm2-exporder-impact-gate-1009
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'VM2_EXPORDER_IMPACT_GATE_1009=true'
